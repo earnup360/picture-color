@@ -2,537 +2,741 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Round Corner Image Editor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>মোবাইল কালার গ্রেডিং টুল</title>
     <style>
-        :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3f37c9;
-            --text-color: #333;
-            --bg-color: #f8f9fa;
-            --card-bg: #fff;
-            --border-color: #e0e0e0;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --radius: 12px;
-        }
-
-        [data-theme="dark"] {
-            --primary-color: #4895ef;
-            --secondary-color: #4361ee;
-            --text-color: #f8f9fa;
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --border-color: #333;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
-            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            font-size: 2rem;
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-
-        .description {
-            color: var(--text-color);
-            opacity: 0.8;
-            margin-bottom: 20px;
-        }
-
-        .theme-toggle {
-            background: var(--primary-color);
+        
+        body {
+            background-color: #1a1a1a;
             color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
-        }
-
-        .theme-toggle:hover {
-            background: var(--secondary-color);
-        }
-
-        .app-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        @media (max-width: 768px) {
-            .app-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .upload-section, .preview-section {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 25px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-color);
-        }
-
-        .upload-area {
-            border: 2px dashed var(--border-color);
-            border-radius: var(--radius);
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 20px;
-            position: relative;
-            height: 200px;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 100vw;
+            overflow: hidden;
+        }
+        
+        .header {
+            background-color: #2a2a2a;
+            padding: 12px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+        
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .image-container {
+            flex: 1;
+            display: flex;
             justify-content: center;
             align-items: center;
+            background-color: #121212;
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed #444; /* Added for drag and drop visual */
+            margin: 10px; /* Added for better spacing */
+            border-radius: 8px; /* Slightly rounded corners */
+            transition: border-color 0.3s ease-in-out;
         }
 
-        .upload-area:hover {
-            border-color: var(--primary-color);
+        .image-container.drag-over {
+            border-color: #4a90e2; /* Highlight on drag over */
+        }
+        
+        #canvas {
+            max-width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+            display: block; /* Ensures no extra space below canvas */
         }
 
-        .upload-area.active {
-            border-color: var(--primary-color);
-            background-color: rgba(67, 97, 238, 0.05);
+        .upload-placeholder {
+            position: absolute;
+            color: #888;
+            font-size: 16px;
+            text-align: center;
+            padding: 20px;
+            pointer-events: none; /* Allows clicks to pass through to underlying elements */
         }
-
-        .upload-icon {
-            font-size: 48px;
-            color: var(--primary-color);
-            margin-bottom: 15px;
-        }
-
-        .upload-text {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-        }
-
-        .upload-hint {
-            font-size: 0.9rem;
-            color: var(--text-color);
-            opacity: 0.7;
-        }
-
-        #fileInput {
-            display: none;
-        }
-
+        
         .controls {
-            margin-top: 20px;
-        }
-
-        .control-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .slider-container {
+            background-color: #2a2a2a;
+            padding: 15px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 15px;
+            overflow-y: auto;
+            max-height: 40vh;
+            border-top: 1px solid #333; /* Separator from image container */
         }
-
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        
         .slider {
-            flex: 1;
-            height: 8px;
             -webkit-appearance: none;
-            appearance: none;
-            background: #ddd;
-            border-radius: 4px;
+            width: 100%;
+            height: 6px;
+            background: #444;
+            border-radius: 3px;
             outline: none;
         }
-
+        
         .slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            background: var(--primary-color);
-            cursor: pointer;
+            background: #4a90e2;
+            cursor: grab; /* More indicative cursor */
+            transition: background-color 0.2s;
         }
 
-        .slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            cursor: pointer;
+        .slider::-webkit-slider-thumb:active {
+            cursor: grabbing;
         }
-
-        .value-display {
-            width: 50px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: var(--radius);
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn:hover {
-            background: var(--secondary-color);
-            transform: translateY(-2px);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-        }
-
-        .btn-secondary:hover {
-            background: #5a6268;
-        }
-
-        .btn-group {
+        
+        .buttons {
             display: flex;
             gap: 10px;
-            margin-top: 20px;
+            flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
         }
-
-        .preview-container {
-            width: 100%;
-            height: 300px;
+        
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            color: white;
+            background-color: #4a90e2;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            transition: background-color 0.2s;
+            min-width: 120px; /* Ensure buttons don't get too small */
+        }
+        
+        .btn:active {
+            background-color: #3a7bc8;
+        }
+        
+        .btn-secondary {
+            background-color: #444;
+        }
+        
+        .btn-secondary:active {
+            background-color: #333;
+        }
+        
+        .presets {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+        
+        .preset {
+            min-width: 70px; /* Slightly larger presets */
+            height: 70px;
+            border-radius: 5px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: var(--bg-color);
-            border-radius: var(--radius);
-            overflow: hidden;
-            margin-bottom: 20px;
-            position: relative;
-            border: 1px solid var(--border-color);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            flex-shrink: 0; /* Prevent shrinking */
         }
-
-        #previewImage {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            border-radius: 0;
-            transition: border-radius 0.2s;
+        
+        .preset:active {
+            transform: scale(0.95);
         }
-
-        .image-info {
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
+        
+        .preset.active {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 2px #4a90e2, 0 2px 8px rgba(0, 0, 0, 0.5); /* Enhanced active state */
+        }
+        
+        .file-input {
             display: none;
         }
-
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            color: var(--text-color);
-            opacity: 0.7;
-            font-size: 0.9rem;
+        
+        @media (orientation: landscape) {
+            .content {
+                flex-direction: row;
+            }
+            
+            .image-container {
+                flex: 2;
+                max-height: 100vh;
+                margin: 10px;
+            }
+            
+            .controls {
+                flex: 1;
+                max-height: 100vh;
+                overflow-y: auto;
+                border-top: none;
+                border-left: 1px solid #333;
+            }
+            
+            #canvas {
+                max-height: 90vh;
+            }
         }
-
-        .drag-overlay {
+        
+        /* Loader style */
+        .loader {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(67, 97, 238, 0.1);
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
             display: flex;
             justify-content: center;
             align-items: center;
-            font-weight: bold;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            border-radius: var(--radius);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
+            z-index: 100;
+            display: none;
+            border-radius: 8px;
         }
-
-        .drag-overlay.active {
-            opacity: 1;
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4a90e2;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Toast message */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap; /* Prevent text wrapping */
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <div>
-                <h1>Round Corner Image Editor</h1>
-                <p class="description">আপনার ইমেজের কর্নারগুলোকে সুন্দর গোলাকার করে নিন</p>
-            </div>
-            <button class="theme-toggle" id="themeToggle">
-                <span id="themeIcon">🌙</span>
-                <span id="themeText">ডার্ক মোড</span>
-            </button>
-        </header>
-
-        <div class="app-container">
-            <div class="upload-section">
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-text">ইমেজ আপলোড করুন</div>
-                    <div class="upload-hint">ক্লিক করুন অথবা ইমেজ ড্রাগ এন্ড ড্রপ করুন</div>
-                    <div class="drag-overlay" id="dragOverlay">ইমেজ ড্রপ করুন</div>
-                    <input type="file" id="fileInput" accept="image/*">
-                </div>
-
-                <div class="controls">
-                    <div class="control-group">
-                        <label for="cornerRadius">কর্নার রাউন্ডনেস</label>
-                        <div class="slider-container">
-                            <input type="range" min="0" max="150" value="0" class="slider" id="cornerRadius">
-                            <span class="value-display" id="radiusValue">0px</span>
-                        </div>
-                    </div>
-
-                    <div class="btn-group">
-                        <button class="btn" id="downloadBtn">
-                            <span>ডাউনলোড (PNG)</span>
-                        </button>
-                        <button class="btn btn-secondary" id="resetBtn">
-                            <span>রিসেট</span>
-                        </button>
-                    </div>
+        <div class="header">
+            মোবাইল কালার গ্রেডিং টুল
+        </div>
+        
+        <div class="content">
+            <div class="image-container" id="imageContainer">
+                <canvas id="canvas"></canvas>
+                <div class="upload-placeholder" id="uploadPlaceholder">ছবি আপলোড করতে এখানে টেনে আনুন অথবা ক্লিক করুন</div>
+                <div class="loader">
+                    <div class="spinner"></div>
                 </div>
             </div>
-
-            <div class="preview-section">
-                <h2>প্রিভিউ</h2>
-                <div class="preview-container">
-                    <img id="previewImage" src="" alt="Preview Image">
-                    <div class="image-info" id="imageInfo"></div>
+            
+            <div class="controls">
+                <div class="buttons">
+                    <button id="uploadBtn" class="btn">ছবি আপলোড</button>
+                    <input type="file" id="fileInput" class="file-input" accept="image/*">
+                    <button id="downloadBtn" class="btn btn-secondary">ডাউনলোড</button>
                 </div>
-                <p>আপনার ইমেজের প্রিভিউ এখানে দেখানো হবে। কর্নার রাউন্ডনেস স্লাইড করে পরিবর্তন করতে পারবেন।</p>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>ব্রাইটনেস</span>
+                        <span id="brightnessValue">0</span>
+                    </div>
+                    <input type="range" min="-100" max="100" value="0" class="slider" id="brightness">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>কন্ট্রাস্ট</span>
+                        <span id="contrastValue">100</span>
+                    </div>
+                    <input type="range" min="0" max="200" value="100" class="slider" id="contrast">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>স্যাচুরেশন</span>
+                        <span id="saturationValue">100</span>
+                    </div>
+                    <input type="range" min="0" max="200" value="100" class="slider" id="saturation">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>তাপমাত্রা</span>
+                        <span id="temperatureValue">0</span>
+                    </div>
+                    <input type="range" min="-100" max="100" value="0" class="slider" id="temperature">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>ভিব্র্যান্স</span>
+                        <span id="vibranceValue">0</span>
+                    </div>
+                    <input type="range" min="-100" max="100" value="0" class="slider" id="vibrance">
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">প্রিসেট</label>
+                    <div class="presets">
+                        <div class="preset" style="background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);" data-preset="warm">উষ্ণ</div>
+                        <div class="preset" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);" data-preset="cool">ঠান্ডা</div>
+                        <div class="preset" style="background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);" data-preset="fresh">সতেজ</div>
+                        <div class="preset" style="background: linear-gradient(135deg, #ffc3a0 0%, #ffafbd 100%);" data-preset="vintage">ভিন্টেজ</div>
+                        <div class="preset" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);" data-preset="dramatic">নাটকীয়</div>
+                        <div class="preset" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);" data-preset="golden">সোনালী</div>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button id="resetBtn" class="btn btn-secondary">রিসেট</button>
+                    <button id="applyBtn" class="btn">অ্যাপ্লাই করুন</button>
+                </div>
             </div>
         </div>
-
-        <footer>
-            <p>© 2023 Round Corner Image Editor | তৈরি করেছেন আপনার জন্য</p>
-        </footer>
     </div>
-
+    
+    <div class="toast" id="toast"></div>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // DOM Elements
+            // DOM elements
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
             const fileInput = document.getElementById('fileInput');
-            const uploadArea = document.getElementById('uploadArea');
-            const previewImage = document.getElementById('previewImage');
-            const cornerRadius = document.getElementById('cornerRadius');
-            const radiusValue = document.getElementById('radiusValue');
+            const uploadBtn = document.getElementById('uploadBtn');
             const downloadBtn = document.getElementById('downloadBtn');
             const resetBtn = document.getElementById('resetBtn');
-            const imageInfo = document.getElementById('imageInfo');
-            const themeToggle = document.getElementById('themeToggle');
-            const themeIcon = document.getElementById('themeIcon');
-            const themeText = document.getElementById('themeText');
-            const dragOverlay = document.getElementById('dragOverlay');
-
-            // Variables
+            const applyBtn = document.getElementById('applyBtn');
+            const loader = document.querySelector('.loader');
+            const toast = document.getElementById('toast');
+            const imageContainer = document.getElementById('imageContainer'); // New
+            const uploadPlaceholder = document.getElementById('uploadPlaceholder'); // New
+            
+            // Sliders
+            const brightnessSlider = document.getElementById('brightness');
+            const contrastSlider = document.getElementById('contrast');
+            const saturationSlider = document.getElementById('saturation');
+            const temperatureSlider = document.getElementById('temperature');
+            const vibranceSlider = document.getElementById('vibrance');
+            
+            // Value displays
+            const brightnessValue = document.getElementById('brightnessValue');
+            const contrastValue = document.getElementById('contrastValue');
+            const saturationValue = document.getElementById('saturationValue');
+            const temperatureValue = document.getElementById('temperatureValue');
+            const vibranceValue = document.getElementById('vibranceValue');
+            
+            // Presets
+            const presets = document.querySelectorAll('.preset');
+            
+            // Image variables
+            let originalImage = null;
             let currentImage = null;
-            let currentImageName = '';
-
-            // Event Listeners
-            uploadArea.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', handleFileSelect);
-            cornerRadius.addEventListener('input', updateCornerRadius);
+            let imageLoaded = false;
+            
+            // Event listeners
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleImageUpload);
             downloadBtn.addEventListener('click', downloadImage);
-            resetBtn.addEventListener('click', resetAll);
-            themeToggle.addEventListener('click', toggleTheme);
-
-            // Drag and Drop events
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('active');
-                dragOverlay.classList.add('active');
+            resetBtn.addEventListener('click', resetFilters);
+            applyBtn.addEventListener('click', applyFilters);
+            
+            // Slider events
+            brightnessSlider.addEventListener('input', updateSliderValue);
+            contrastSlider.addEventListener('input', updateSliderValue);
+            saturationSlider.addEventListener('input', updateSliderValue);
+            temperatureSlider.addEventListener('input', updateSliderValue);
+            vibranceSlider.addEventListener('input', updateSliderValue);
+            
+            // Preset events
+            presets.forEach(preset => {
+                preset.addEventListener('click', applyPreset);
             });
 
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('active');
-                dragOverlay.classList.remove('active');
+            // Drag and drop events for imageContainer
+            imageContainer.addEventListener('dragover', (e) => {
+                e.preventDefault(); // Prevent default to allow drop
+                imageContainer.classList.add('drag-over');
+                uploadPlaceholder.textContent = 'ছবি ছাড়ুন'; // Change text on drag over
             });
 
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('active');
-                dragOverlay.classList.remove('active');
+            imageContainer.addEventListener('dragleave', () => {
+                imageContainer.classList.remove('drag-over');
+                if (!imageLoaded) {
+                    uploadPlaceholder.textContent = 'ছবি আপলোড করতে এখানে টেনে আনুন অথবা ক্লিক করুন';
+                } else {
+                    uploadPlaceholder.textContent = ''; // Hide if image is loaded
+                }
+            });
+
+            imageContainer.addEventListener('drop', (e) => {
+                e.preventDefault(); // Prevent default open in browser
+                imageContainer.classList.remove('drag-over');
+                uploadPlaceholder.textContent = 'ছবি আপলোড করতে এখানে টেনে আনুন অথবা ক্লিক করুন'; // Reset text
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleImageUpload({ target: { files: files } });
+                }
+            });
+            
+            // Update slider value displays
+            function updateSliderValue(e) {
+                const slider = e.target;
+                const valueDisplay = document.getElementById(slider.id + 'Value');
+                valueDisplay.textContent = slider.value;
                 
-                if (e.dataTransfer.files.length) {
-                    fileInput.files = e.dataTransfer.files;
-                    handleFileSelect({ target: fileInput });
+                if (imageLoaded) {
+                    applyFilters();
                 }
-            });
-
-            // Functions
-            function handleFileSelect(event) {
-                const file = event.target.files[0];
+            }
+            
+            // Handle image upload
+            function handleImageUpload(e) {
+                const file = e.target.files[0];
                 if (!file) return;
-
-                if (!file.type.match('image.*')) {
-                    alert('দয়া করে একটি ইমেজ ফাইল নির্বাচন করুন');
-                    return;
-                }
-
-                currentImageName = file.name.split('.')[0];
-
+                
+                showLoader();
+                
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    currentImage = e.target.result;
-                    updateImageInfo(file);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        currentImage = img;
+                        drawImage();
+                        imageLoaded = true;
+                        hideLoader();
+                        uploadPlaceholder.style.display = 'none'; // Hide placeholder once image is loaded
+                        showToast('ছবি সফলভাবে লোড হয়েছে');
+                    };
+                    img.onerror = function() {
+                        hideLoader();
+                        showToast('ছবি লোড করতে সমস্যা হয়েছে');
+                    };
+                    img.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
             }
-
-            function updateCornerRadius() {
-                const radius = cornerRadius.value;
-                previewImage.style.borderRadius = `${radius}px`;
-                radiusValue.textContent = `${radius}px`;
+            
+            // Draw image on canvas
+            function drawImage() {
+                if (!currentImage) return;
+                
+                const containerWidth = imageContainer.clientWidth;
+                const containerHeight = imageContainer.clientHeight;
+                
+                let drawWidth = currentImage.width;
+                let drawHeight = currentImage.height;
+                
+                // Calculate aspect ratio
+                const imageAspect = currentImage.width / currentImage.height;
+                const containerAspect = containerWidth / containerHeight;
+                
+                if (imageAspect > containerAspect) {
+                    // Image is wider than container
+                    drawWidth = containerWidth;
+                    drawHeight = containerWidth / imageAspect;
+                } else {
+                    // Image is taller than container
+                    drawHeight = containerHeight;
+                    drawWidth = containerHeight * imageAspect;
+                }
+                
+                // Set canvas dimensions
+                canvas.width = drawWidth;
+                canvas.height = drawHeight;
+                
+                // Draw image
+                ctx.drawImage(currentImage, 0, 0, drawWidth, drawHeight);
             }
+            
+            // Apply filters to image
+            function applyFilters() {
+                if (!originalImage) return;
+                
+                showLoader();
+                
+                // Get filter values
+                const brightness = parseInt(brightnessSlider.value);
+                const contrast = parseInt(contrastSlider.value) / 100;
+                const saturation = parseInt(saturationSlider.value) / 100;
+                const temperature = parseInt(temperatureSlider.value);
+                const vibrance = parseInt(vibranceSlider.value);
+                
+                // Create temporary canvas
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = originalImage.width;
+                tempCanvas.height = originalImage.height;
+                tempCtx.drawImage(originalImage, 0, 0);
+                
+                // Get image data
+                const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                const data = imageData.data;
+                
+                // Apply brightness, contrast, saturation, vibrance, temperature in a single loop for efficiency
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i];
+                    let g = data[i + 1];
+                    let b = data[i + 2];
 
+                    // Apply brightness
+                    r += 255 * (brightness / 100);
+                    g += 255 * (brightness / 100);
+                    b += 255 * (brightness / 100);
+
+                    // Apply contrast
+                    const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+                    r = factor * (r - 128) + 128;
+                    g = factor * (g - 128) + 128;
+                    b = factor * (b - 128) + 128;
+
+                    // Apply temperature
+                    const temp = temperature / 100;
+                    if (temp > 0) {
+                        // Warm (increase red, decrease blue)
+                        r += 2.55 * temp * 2; // Increased effect for more noticeable warmth
+                        b -= 2.55 * temp * 2;
+                    } else {
+                        // Cool (decrease red, increase blue)
+                        r += 2.55 * temp * 2;
+                        b -= 2.55 * temp * 2;
+                    }
+
+                    // Apply saturation and vibrance
+                    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                    let satAmount = saturation;
+                    
+                    if (vibrance !== 0) {
+                        const currentSaturation = 1 - (Math.min(r, g, b) / Math.max(r, g, b) || 0); // Handle division by zero
+                        const vibranceFactor = 1 + (vibrance / 100) * (1 - currentSaturation);
+                        satAmount *= vibranceFactor;
+                    }
+                    
+                    r = gray + satAmount * (r - gray);
+                    g = gray + satAmount * (g - gray);
+                    b = gray + satAmount * (b - gray);
+
+                    // Clamp values to 0-255
+                    data[i] = Math.max(0, Math.min(255, r));
+                    data[i + 1] = Math.max(0, Math.min(255, g));
+                    data[i + 2] = Math.max(0, Math.min(255, b));
+                }
+                
+                // Put modified data back
+                tempCtx.putImageData(imageData, 0, 0);
+                
+                // Create new image with filters
+                const filteredImage = new Image();
+                filteredImage.onload = function() {
+                    currentImage = filteredImage;
+                    drawImage();
+                    hideLoader();
+                };
+                filteredImage.src = tempCanvas.toDataURL();
+            }
+            
+            // Reset all filters
+            function resetFilters() {
+                brightnessSlider.value = 0;
+                contrastSlider.value = 100;
+                saturationSlider.value = 100;
+                temperatureSlider.value = 0;
+                vibranceSlider.value = 0;
+                
+                brightnessValue.textContent = '0';
+                contrastValue.textContent = '100';
+                saturationValue.textContent = '100';
+                temperatureValue.textContent = '0';
+                vibranceValue.textContent = '0';
+                
+                if (originalImage) {
+                    currentImage = originalImage;
+                    drawImage();
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas if no original image
+                    uploadPlaceholder.style.display = 'flex'; // Show placeholder if no image
+                }
+                
+                // Remove active class from presets
+                presets.forEach(preset => preset.classList.remove('active'));
+                
+                showToast('ফিল্টার রিসেট করা হয়েছে');
+            }
+            
+            // Apply preset
+            function applyPreset(e) {
+                const preset = e.target.dataset.preset;
+                
+                // Remove active class from all presets
+                presets.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked preset
+                e.target.classList.add('active');
+                
+                // Set values based on preset
+                switch (preset) {
+                    case 'warm':
+                        brightnessSlider.value = 10;
+                        contrastSlider.value = 110;
+                        saturationSlider.value = 120;
+                        temperatureSlider.value = 30;
+                        vibranceSlider.value = 20;
+                        break;
+                    case 'cool':
+                        brightnessSlider.value = 5;
+                        contrastSlider.value = 105;
+                        saturationSlider.value = 90;
+                        temperatureSlider.value = -30;
+                        vibranceSlider.value = 10;
+                        break;
+                    case 'fresh':
+                        brightnessSlider.value = 15;
+                        contrastSlider.value = 115;
+                        saturationSlider.value = 130;
+                        temperatureSlider.value = 10;
+                        vibranceSlider.value = 30;
+                        break;
+                    case 'vintage':
+                        brightnessSlider.value = -10;
+                        contrastSlider.value = 90;
+                        saturationSlider.value = 80;
+                        temperatureSlider.value = 40;
+                        vibranceSlider.value = -20;
+                        break;
+                    case 'dramatic':
+                        brightnessSlider.value = -15;
+                        contrastSlider.value = 130;
+                        saturationSlider.value = 110;
+                        temperatureSlider.value = 0;
+                        vibranceSlider.value = 40;
+                        break;
+                    case 'golden':
+                        brightnessSlider.value = 5;
+                        contrastSlider.value = 120;
+                        saturationSlider.value = 125;
+                        temperatureSlider.value = 25;
+                        vibranceSlider.value = 15;
+                        break;
+                }
+                
+                // Update value displays
+                brightnessValue.textContent = brightnessSlider.value;
+                contrastValue.textContent = contrastSlider.value;
+                saturationValue.textContent = saturationSlider.value;
+                temperatureValue.textContent = temperatureSlider.value;
+                vibranceValue.textContent = vibranceSlider.value;
+                
+                // Apply filters
+                if (imageLoaded) {
+                    applyFilters();
+                } else {
+                    showToast('প্রথমে একটি ছবি আপলোড করুন');
+                }
+            }
+            
+            // Download image
             function downloadImage() {
                 if (!currentImage) {
-                    alert('দয়া করে প্রথমে একটি ইমেজ আপলোড করুন');
+                    showToast('কোনো ছবি লোড করা হয়নি');
                     return;
                 }
-
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
                 
-                img.onload = function() {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    
-                    // Clear canvas with transparent background
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Create rounded corners
-                    const radius = parseInt(cornerRadius.value);
-                    ctx.beginPath();
-                    ctx.moveTo(radius, 0);
-                    ctx.lineTo(img.width - radius, 0);
-                    ctx.quadraticCurveTo(img.width, 0, img.width, radius);
-                    ctx.lineTo(img.width, img.height - radius);
-                    ctx.quadraticCurveTo(img.width, img.height, img.width - radius, img.height);
-                    ctx.lineTo(radius, img.height);
-                    ctx.quadraticCurveTo(0, img.height, 0, img.height - radius);
-                    ctx.lineTo(0, radius);
-                    ctx.quadraticCurveTo(0, 0, radius, 0);
-                    ctx.closePath();
-                    ctx.clip();
-                    
-                    // Draw the image with transparent background
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Convert to PNG with transparent background
-                    const url = canvas.toDataURL('image/png');
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${currentImageName}_rounded${cornerRadius.value > 0 ? `_${cornerRadius.value}px` : ''}.png`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                };
+                const link = document.createElement('a');
+                link.download = 'color-graded-image.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
                 
-                img.src = currentImage;
+                showToast('ছবি ডাউনলোড শুরু হয়েছে');
             }
-
-            function resetAll() {
-                previewImage.src = '';
-                currentImage = null;
-                cornerRadius.value = 0;
-                radiusValue.textContent = '0px';
-                previewImage.style.borderRadius = '0';
-                fileInput.value = '';
-                imageInfo.style.display = 'none';
+            
+            // Show loader
+            function showLoader() {
+                loader.style.display = 'flex';
             }
-
-            function updateImageInfo(file) {
-                const img = new Image();
-                img.onload = function() {
-                    imageInfo.textContent = `${file.name} | ${img.width}×${img.height}px | ${formatFileSize(file.size)}`;
-                    imageInfo.style.display = 'block';
-                };
-                img.src = URL.createObjectURL(file);
+            
+            // Hide loader
+            function hideLoader() {
+                loader.style.display = 'none';
             }
-
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            
+            // Show toast message
+            function showToast(message) {
+                toast.textContent = message;
+                toast.style.opacity = 1;
+                
+                setTimeout(() => {
+                    toast.style.opacity = 0;
+                }, 3000);
             }
-
-            function toggleTheme() {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                if (currentTheme === 'dark') {
-                    document.documentElement.removeAttribute('data-theme');
-                    themeIcon.textContent = '🌙';
-                    themeText.textContent = 'ডার্ক মোড';
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    themeIcon.textContent = '☀️';
-                    themeText.textContent = 'লাইট মোড';
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                if (currentImage) {
+                    drawImage();
                 }
-            }
-
-            // Initialize
-            resetAll();
+            });
+            
+            // Initial setup
+            resetFilters();
         });
     </script>
 </body>
